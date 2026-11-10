@@ -5,7 +5,11 @@ void main() {
   const url = 'https://api.tallyvel.example';
 
   test('accepts a config that matches the flavour', () {
-    final config = AppConfig.validate(env: 'dev', apiBaseUrl: url, flavor: 'dev');
+    final config = AppConfig.validate(
+      env: 'dev',
+      apiBaseUrl: url,
+      flavor: 'dev',
+    );
 
     expect(config.env, 'dev');
     expect(config.apiBaseUrl, url);

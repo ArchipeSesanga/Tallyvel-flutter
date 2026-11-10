@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 
+/// The root widget of the Tallyvel app.
 class TallyvelApp extends StatelessWidget {
+  /// Creates the app.
   const TallyvelApp({super.key});
 
   @override
