@@ -26,7 +26,7 @@ lib/
 It depends on `domain/` interfaces only. This will be enforced later with providers
 and, optionally, a test.
 
-## Flavours and config (Android)
+## Flavours and config (Android and iOS)
 
 Three flavours, installable side by side:
 
@@ -45,4 +45,9 @@ flutter build apk --flavor prod --dart-define-from-file=config/prod.json
 
 The config files hold no secrets. The app refuses to start without a config, or
 with a config for a different flavour (for example a `prod` build given
-`dev.json`); see `test/core/config/app_config_test.dart`. iOS flavours are not set up yet.
+`dev.json`); see `test/core/config/app_config_test.dart`.
+
+On iOS each flavour has its own Xcode scheme and build configurations
+(`Debug-dev`, `Release-staging`, ...) with the same ids and names as Android.
+`flutter build ios --simulator --flavor dev --dart-define-from-file=config/dev.json`
+builds without signing.
