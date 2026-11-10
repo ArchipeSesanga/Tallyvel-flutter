@@ -25,3 +25,24 @@ lib/
 **The rule that matters most:** `presentation/` never imports a `data/` implementation.
 It depends on `domain/` interfaces only. This will be enforced later with providers
 and, optionally, a test.
+
+## Flavours and config (Android)
+
+Three flavours, installable side by side:
+
+| Flavour | Application id | Launcher name | Config |
+|---|---|---|---|
+| `dev` | `za.co.archipe.tallyvel.dev` | Tallyvel Dev | `config/dev.json` |
+| `staging` | `za.co.archipe.tallyvel.staging` | Tallyvel Staging | `config/staging.json` |
+| `prod` | `za.co.archipe.tallyvel` | Tallyvel | `config/prod.json` |
+
+Always pass the flavour and its matching config file:
+
+```
+flutter run --flavor dev --dart-define-from-file=config/dev.json
+flutter build apk --flavor prod --dart-define-from-file=config/prod.json
+```
+
+The config files hold no secrets. The app refuses to start without a config, or
+with a config for a different flavour (for example a `prod` build given
+`dev.json`); see `test/core/config/app_config_test.dart`. iOS flavours are not set up yet.

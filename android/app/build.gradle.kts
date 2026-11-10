@@ -29,6 +29,28 @@ android {
         versionName = flutter.versionName
     }
 
+    // dev, staging and prod get different application ids and launcher names,
+    // so all three can be installed side by side.
+    // The launcher name uses a manifest placeholder, not resValue (resValue
+    // fails on AGP 9).
+    flavorDimensions += "env"
+    productFlavors {
+        create("dev") {
+            dimension = "env"
+            applicationIdSuffix = ".dev"
+            manifestPlaceholders["appName"] = "Tallyvel Dev"
+        }
+        create("staging") {
+            dimension = "env"
+            applicationIdSuffix = ".staging"
+            manifestPlaceholders["appName"] = "Tallyvel Staging"
+        }
+        create("prod") {
+            dimension = "env"
+            manifestPlaceholders["appName"] = "Tallyvel"
+        }
+    }
+
     buildTypes {
         release {
             // TODO: Add your own signing config for the release build.
