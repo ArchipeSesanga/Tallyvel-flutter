@@ -60,9 +60,37 @@ void main() {
     expect(find.text('How do you want to start?'), findsOneWidget);
   });
 
-  testWidgets('skips onboarding once completed', (tester) async {
+  testWidgets('skips onboarding once completed and asks to sign in',
+      (tester) async {
     await _pump(tester, {'onboarding_complete': true});
     expect(find.text('Every contribution, counted.'), findsNothing);
-    expect(find.text('Tallyvel'), findsOneWidget);
+    expect(find.text('Sign in'), findsOneWidget);
+  });
+
+  testWidgets('signs in as Lerato, then signs out back to sign-in',
+      (tester) async {
+    await _pump(tester, {'onboarding_complete': true});
+
+    await tester.tap(find.text('Lerato M.'));
+    await tester.pump();
+    await tester.tap(find.text('Continue'));
+    await tester.pumpAndSettle();
+    expect(find.text('Home'), findsWidgets);
+    expect(find.text('Sign in'), findsNothing);
+
+    await tester.tap(find.text('Profile'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Sign out'));
+    await tester.pumpAndSettle();
+    expect(find.text('Sign in'), findsOneWidget);
+    expect(find.byType(NavigationBar), findsNothing);
+  });
+
+  testWidgets('rejects an unknown email', (tester) async {
+    await _pump(tester, {'onboarding_complete': true});
+    await tester.enterText(find.byType(TextField), 'nobody@example.com');
+    await tester.tap(find.text('Continue'));
+    await tester.pumpAndSettle();
+    expect(find.text('No account with that email'), findsOneWidget);
   });
 }
