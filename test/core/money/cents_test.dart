@@ -39,9 +39,16 @@ void main() {
       expect(formatRand(const Cents(10050)), 'R100,50');
     });
 
-    test('groups thousands with a non-breaking space', () {
-      expect(formatRand(const Cents(123450)), 'R1 234,50');
-      expect(formatRand(const Cents(100000000)), 'R1 000 000,00');
+    test('uses no group separator below one thousand', () {
+      expect(formatRand(const Cents(99900)), 'R999,00');
+      expect(formatRand(const Cents(99999)), 'R999,99');
+    });
+
+    test('groups thousands with a non-breaking space (U+00A0, not U+0020)', () {
+      expect(formatRand(const Cents(100000)), 'R1\u00A0000,00');
+      expect(formatRand(const Cents(100000)), isNot('R1 000,00'));
+      expect(formatRand(const Cents(123450)), 'R1\u00A0234,50');
+      expect(formatRand(const Cents(100000000)), 'R1\u00A0000\u00A0000,00');
     });
 
     test('puts the minus before the R', () {
@@ -49,7 +56,10 @@ void main() {
     });
 
     test('holds the largest amount the API accepts', () {
-      expect(formatRand(Cents.max), 'R90 071 992 547 409,91');
+      expect(
+        formatRand(Cents.max),
+        'R90\u00A0071\u00A0992\u00A0547\u00A0409,91',
+      );
     });
   });
 
@@ -65,7 +75,7 @@ void main() {
     test('ignores a leading R, spaces and non-breaking spaces', () {
       expect(parseRand('R 1 234,50'), const Cents(123450));
       expect(parseRand(' r1234.50 '), const Cents(123450));
-      expect(parseRand('R1 234,50'), const Cents(123450));
+      expect(parseRand('R1\u00A0234,50'), const Cents(123450));
     });
 
     test('round-trips what formatRand writes', () {
@@ -81,7 +91,10 @@ void main() {
         'R',
         'abc',
         '-5',
-        '1.234', // three decimals: not one thousand two hundred thirty-four
+        '1.234', // three decimals: cents, or a thousands separator? Refused.
+        '1,234', // the same, with a comma
+        '1,234.50', // two separators
+        '1.234,50', // two separators
         '1,234,5',
         '12.',
         '.5',

@@ -78,7 +78,7 @@ void main() {
 
       expect(find.text('Family Stokvel'), findsOneWidget);
       expect(
-        find.textContaining('R1 000,10 of R2 000,00 collected'),
+        find.textContaining('R1\u00A0000,10 of R2\u00A0000,00 collected'),
         findsOneWidget,
       );
       expect(find.text('Lindiwe Dube'), findsOneWidget);
