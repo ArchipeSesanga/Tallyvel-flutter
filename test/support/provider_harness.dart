@@ -1,6 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_riverpod/misc.dart' show Override;
 import 'package:tallyvel/app/composition_root.dart';
+import 'package:tallyvel/core/fakes/fake_latency.dart';
 import 'package:tallyvel/core/fakes/seed_world.dart';
 import 'package:tallyvel/features/auth/data/auth_provider.dart';
 import 'package:tallyvel/features/auth/domain/auth_state.dart';
@@ -23,8 +24,14 @@ class FixedAuth extends Auth {
 
 /// Overrides that put the fake world on [testNow] and sign in as [persona]
 /// (or nobody, when `null`).
-List<Override> fakeWorldAs(Persona? persona) => [
+///
+/// The fakes answer with no delay unless [latency] says otherwise.
+List<Override> fakeWorldAs(
+  Persona? persona, {
+  FakeLatency latency = FakeLatency.none,
+}) => [
   seedWorldProvider.overrideWithValue(SeedWorld(now: testNow)),
+  fakeLatencyProvider.overrideWithValue(latency),
   authProvider.overrideWith(
     () => FixedAuth(persona == null ? const SignedOut() : SignedIn(persona)),
   ),

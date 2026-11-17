@@ -1,4 +1,5 @@
 import 'package:riverpod_annotation/riverpod_annotation.dart';
+import 'package:tallyvel/core/fakes/fake_latency.dart';
 import 'package:tallyvel/core/fakes/seed_world.dart';
 import 'package:tallyvel/features/activity/data/fake_activity_repository.dart';
 import 'package:tallyvel/features/activity/domain/activity_repository.dart';
@@ -28,6 +29,13 @@ part 'composition_root.g.dart';
 @Riverpod(keepAlive: true)
 SeedWorld seedWorld(Ref ref) => SeedWorld(now: DateTime.now());
 
+/// How long the fakes take to answer. A third of a second, so the app shows
+/// its loading states the way it will with a network; tests override it with
+/// [FakeLatency.none] (or make one stokvel slow).
+@Riverpod(keepAlive: true)
+FakeLatency fakeLatency(Ref ref) =>
+    const FakeLatency(base: Duration(milliseconds: 350));
+
 /// The id of the signed-in person in the fake world.
 ///
 /// Signed out, this is an id nobody has, so every fake answers "nothing" and
@@ -48,6 +56,7 @@ String signedInUserId(Ref ref) => switch (ref.watch(authProvider)) {
 HomeRepository homeRepository(Ref ref) => FakeHomeRepository(
   ref.watch(seedWorldProvider),
   ref.watch(signedInUserIdProvider),
+  ref.watch(fakeLatencyProvider),
 );
 
 /// Answers which stokvels the person is in, and as what.
@@ -56,6 +65,7 @@ MembershipsRepository membershipsRepository(Ref ref) =>
     FakeMembershipsRepository(
       ref.watch(seedWorldProvider),
       ref.watch(signedInUserIdProvider),
+      ref.watch(fakeLatencyProvider),
     );
 
 /// Answers the stokvels list and each stokvel's page.
@@ -63,6 +73,7 @@ MembershipsRepository membershipsRepository(Ref ref) =>
 StokvelsRepository stokvelsRepository(Ref ref) => FakeStokvelsRepository(
   ref.watch(seedWorldProvider),
   ref.watch(signedInUserIdProvider),
+  ref.watch(fakeLatencyProvider),
 );
 
 /// Answers a stokvel's cycles.
@@ -70,6 +81,7 @@ StokvelsRepository stokvelsRepository(Ref ref) => FakeStokvelsRepository(
 CyclesRepository cyclesRepository(Ref ref) => FakeCyclesRepository(
   ref.watch(seedWorldProvider),
   ref.watch(signedInUserIdProvider),
+  ref.watch(fakeLatencyProvider),
 );
 
 /// Answers a stokvel's contributions.
@@ -78,6 +90,7 @@ ContributionsRepository contributionsRepository(Ref ref) =>
     FakeContributionsRepository(
       ref.watch(seedWorldProvider),
       ref.watch(signedInUserIdProvider),
+      ref.watch(fakeLatencyProvider),
     );
 
 /// Answers the activity feed.
@@ -85,4 +98,5 @@ ContributionsRepository contributionsRepository(Ref ref) =>
 ActivityRepository activityRepository(Ref ref) => FakeActivityRepository(
   ref.watch(seedWorldProvider),
   ref.watch(signedInUserIdProvider),
+  ref.watch(fakeLatencyProvider),
 );
