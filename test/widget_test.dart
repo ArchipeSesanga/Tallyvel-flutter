@@ -60,15 +60,17 @@ void main() {
     expect(find.text('How do you want to start?'), findsOneWidget);
   });
 
-  testWidgets('skips onboarding once completed and asks to sign in',
-      (tester) async {
+  testWidgets('skips onboarding once completed and asks to sign in', (
+    tester,
+  ) async {
     await _pump(tester, {'onboarding_complete': true});
     expect(find.text('Every contribution, counted.'), findsNothing);
     expect(find.text('Sign in'), findsOneWidget);
   });
 
-  testWidgets('signs in as Lerato, then signs out back to sign-in',
-      (tester) async {
+  testWidgets('signs in as Lerato, then signs out back to sign-in', (
+    tester,
+  ) async {
     await _pump(tester, {'onboarding_complete': true});
 
     await tester.tap(find.text('Lerato M.'));

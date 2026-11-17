@@ -8,12 +8,12 @@ class StokvelsScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Scaffold(
-        body: Center(
-          child: TextButton(
-            // Placeholder so nested navigation can be tested.
-            onPressed: () => const StokvelRoute(id: '1').go(context),
-            child: const Text('Stokvels (tap to open stokvel 1)'),
-          ),
-        ),
-      );
+    body: Center(
+      child: TextButton(
+        // Placeholder so nested navigation can be tested.
+        onPressed: () => const StokvelRoute(id: '1').go(context),
+        child: const Text('Stokvels (tap to open stokvel 1)'),
+      ),
+    ),
+  );
 }

@@ -17,7 +17,7 @@ class CycleScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Scaffold(
-        appBar: AppBar(title: Text('Cycle $cycleId')),
-        body: Center(child: Text('Stokvel $stokvelId · cycle $cycleId')),
-      );
+    appBar: AppBar(title: Text('Cycle $cycleId')),
+    body: Center(child: Text('Stokvel $stokvelId · cycle $cycleId')),
+  );
 }

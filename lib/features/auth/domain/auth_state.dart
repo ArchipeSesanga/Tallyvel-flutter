@@ -9,7 +9,7 @@ enum Persona {
   /// Thandi K.
   thandi('Thandi K.', 'thandi@tallyvel.test');
 
-  const Persona(this.displayName, this.email);
+  Persona(this.displayName, this.email);
 
   /// Name shown in the UI.
   final String displayName;

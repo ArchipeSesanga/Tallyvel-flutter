@@ -11,13 +11,12 @@ class StokvelDetailScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Scaffold(
-        appBar: AppBar(title: Text('Stokvel $stokvelId')),
-        body: Center(
-          child: TextButton(
-            onPressed: () =>
-                CycleRoute(id: stokvelId, cycleId: '1').go(context),
-            child: const Text('Open cycle 1'),
-          ),
-        ),
-      );
+    appBar: AppBar(title: Text('Stokvel $stokvelId')),
+    body: Center(
+      child: TextButton(
+        onPressed: () => CycleRoute(id: stokvelId, cycleId: '1').go(context),
+        child: const Text('Open cycle 1'),
+      ),
+    ),
+  );
 }

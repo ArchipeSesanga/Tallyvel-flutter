@@ -32,48 +32,45 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
 
   @override
   Widget build(BuildContext context) => Scaffold(
-        body: SafeArea(
-          child: Padding(
-            padding: const EdgeInsets.all(24),
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              crossAxisAlignment: CrossAxisAlignment.stretch,
+    body: SafeArea(
+      child: Padding(
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Text('Sign in', style: Theme.of(context).textTheme.headlineMedium),
+            const SizedBox(height: 24),
+            TextField(
+              controller: _email,
+              keyboardType: TextInputType.emailAddress,
+              autocorrect: false,
+              onChanged: (_) => setState(() => _error = null),
+              onSubmitted: (_) => _submit(),
+              decoration: InputDecoration(
+                labelText: 'Email',
+                errorText: _error,
+              ),
+            ),
+            const SizedBox(height: 12),
+            Wrap(
+              spacing: 8,
               children: [
-                Text(
-                  'Sign in',
-                  style: Theme.of(context).textTheme.headlineMedium,
-                ),
-                const SizedBox(height: 24),
-                TextField(
-                  controller: _email,
-                  keyboardType: TextInputType.emailAddress,
-                  autocorrect: false,
-                  onChanged: (_) => setState(() => _error = null),
-                  onSubmitted: (_) => _submit(),
-                  decoration: InputDecoration(
-                    labelText: 'Email',
-                    errorText: _error,
+                for (final p in Persona.values)
+                  ActionChip(
+                    label: Text(p.displayName),
+                    onPressed: () => setState(() {
+                      _email.text = p.email;
+                      _error = null;
+                    }),
                   ),
-                ),
-                const SizedBox(height: 12),
-                Wrap(
-                  spacing: 8,
-                  children: [
-                    for (final p in Persona.values)
-                      ActionChip(
-                        label: Text(p.displayName),
-                        onPressed: () => setState(() {
-                          _email.text = p.email;
-                          _error = null;
-                        }),
-                      ),
-                  ],
-                ),
-                const SizedBox(height: 24),
-                FilledButton(onPressed: _submit, child: const Text('Continue')),
               ],
             ),
-          ),
+            const SizedBox(height: 24),
+            FilledButton(onPressed: _submit, child: const Text('Continue')),
+          ],
         ),
-      );
+      ),
+    ),
+  );
 }

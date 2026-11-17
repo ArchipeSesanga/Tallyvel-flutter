@@ -77,60 +77,106 @@ class SignInRoute extends GoRouteData with $SignInRoute {
     ),
   ],
 )
+/// The signed-in shell: the bottom navigation around the four tabs.
 class AppShellRoute extends StatefulShellRouteData {
+  /// Creates the shell route.
   const AppShellRoute();
 
   @override
-  Widget builder(BuildContext context, GoRouterState state,
-          StatefulNavigationShell navigationShell) =>
-      AppShell(navigationShell: navigationShell);
+  Widget builder(
+    BuildContext context,
+    GoRouterState state,
+    StatefulNavigationShell navigationShell,
+  ) => AppShell(navigationShell: navigationShell);
 }
 
-class HomeBranch extends StatefulShellBranchData { const HomeBranch(); }
-class StokvelsBranch extends StatefulShellBranchData { const StokvelsBranch(); }
-class ActivityBranch extends StatefulShellBranchData { const ActivityBranch(); }
-class ProfileBranch extends StatefulShellBranchData { const ProfileBranch(); }
+/// The Home tab's navigator branch.
+class HomeBranch extends StatefulShellBranchData {
+  /// Creates the branch.
+  const HomeBranch();
+}
 
+/// The Stokvels tab's navigator branch.
+class StokvelsBranch extends StatefulShellBranchData {
+  /// Creates the branch.
+  const StokvelsBranch();
+}
+
+/// The Activity tab's navigator branch.
+class ActivityBranch extends StatefulShellBranchData {
+  /// Creates the branch.
+  const ActivityBranch();
+}
+
+/// The Profile tab's navigator branch.
+class ProfileBranch extends StatefulShellBranchData {
+  /// Creates the branch.
+  const ProfileBranch();
+}
+
+/// The Home tab.
 class HomeRoute extends GoRouteData with $HomeRoute {
+  /// Creates the route.
   const HomeRoute();
+
   @override
   Widget build(BuildContext context, GoRouterState state) => const HomeScreen();
 }
 
+/// The list of the person's stokvels.
 class StokvelsRoute extends GoRouteData with $StokvelsRoute {
+  /// Creates the route.
   const StokvelsRoute();
+
   @override
   Widget build(BuildContext context, GoRouterState state) =>
       const StokvelsScreen();
 }
 
+/// The Activity tab.
 class ActivityRoute extends GoRouteData with $ActivityRoute {
+  /// Creates the route.
   const ActivityRoute();
+
   @override
   Widget build(BuildContext context, GoRouterState state) =>
       const ActivityScreen();
 }
 
+/// The Profile tab.
 class ProfileRoute extends GoRouteData with $ProfileRoute {
+  /// Creates the route.
   const ProfileRoute();
+
   @override
   Widget build(BuildContext context, GoRouterState state) =>
       const ProfileScreen();
 }
 
+/// One stokvel.
 class StokvelRoute extends GoRouteData with $StokvelRoute {
+  /// Creates the route for the stokvel with [id].
   const StokvelRoute({required this.id});
+
+  /// The stokvel's id (a path parameter).
   final String id;
+
   @override
   Widget build(BuildContext context, GoRouterState state) =>
       StokvelDetailScreen(stokvelId: id);
 }
 
-// A child route carries its parent's parameters too.
+/// One cycle of a stokvel. A child route carries its parent's parameters too.
 class CycleRoute extends GoRouteData with $CycleRoute {
+  /// Creates the route for cycle [cycleId] of stokvel [id].
   const CycleRoute({required this.id, required this.cycleId});
+
+  /// The stokvel's id (the parent's path parameter).
   final String id;
+
+  /// The cycle's id.
   final String cycleId;
+
   @override
   Widget build(BuildContext context, GoRouterState state) =>
       CycleScreen(stokvelId: id, cycleId: cycleId);
