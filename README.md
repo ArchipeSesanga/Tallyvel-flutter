@@ -13,13 +13,14 @@ lib/
     money/                       Cents (extension type), the rand formatter and parser
     time/                        CalendarDate (South African day, no time zone), date formatting
     paging/                      PageOf<T>: a page whose last page has no next token
+    state/                       ViewState: the four states every screen has (loading, empty, failure, data)
     fakes/                       the seed world the fake repositories answer from
     config/                      reading the per-flavour config
     router/, theme/, widgets/    navigation, theme, shared widgets
   features/<feature>/
     domain/                      freezed models, enums with `unknown`, repository interfaces (no Flutter)
     data/                        repository implementations (fakes now, the real API in 11.1)
-    presentation/                screens, providers and their sealed view states
+    presentation/                screens and their providers; a view state is mapped here from AsyncValue
 ```
 
 Features with a `domain/`: `memberships`, `stokvels`, `cycles`, `contributions`, `home`, `activity`.
@@ -27,7 +28,8 @@ Features with a `domain/`: `memberships`, `stokvels`, `cycles`, `contributions`,
 **The rule that matters most:** `presentation/` never imports a `data/` implementation.
 It reads repository *providers* from `app/composition_root.dart`, which are typed as the
 domain interfaces. Swapping the fakes for the real API therefore changes that one file.
-(10.3 enforces this with an architecture test.)
+`test/architecture/presentation_imports_test.dart` fails if a file under any `presentation/`
+folder imports a fake, the fake world, Dio or Drift. (10.3 extends it.)
 
 ## Flavours and config (Android and iOS)
 
@@ -64,10 +66,18 @@ and every `switch` over one has no default, so a value the app does not know can
 mistaken for a known one. A list ends with a page that has no next token; the API's own
 marker for that (`""`) stays in the data layer.
 
-The stokvel page is a sealed view state (`StokvelNotFound`, `MemberView`, `TreasurerView`)
-chosen by the person's role *in that stokvel*, so a member cannot be shown a treasurer
-action by a forgotten `if`. A stokvel the person is not in is "not found", the same answer
-as a missing id, because that is what the API sends (404).
+Every screen has the same four states, one sealed type (`ViewState`: loading, empty, failure,
+data), mapped from Riverpod's `AsyncValue` by `viewStateOf`, so a `switch` over them needs no
+default and "no stokvels" is *empty*, never a list that happens to have nothing in it. Home
+is an `AsyncNotifier` with pull-to-refresh that keeps the old cards on screen while it
+reloads. The stokvel page is a Riverpod family by stokvel id, with a picker in its app bar.
+A stokvel the person is not in is "Not found", the same answer as a missing id, because that
+is what the API sends (404).
+
+What a person can do on a stokvel's page is decided by one function, `actionsFor`, a single
+exhaustive match over (role in THIS stokvel, cycle status, status of my own contribution)
+with no wildcard over a status. Its nine rule rows are written above it, each from a rule the
+API enforces, and each has one test.
 
 ### Personas
 
@@ -86,6 +96,119 @@ everywhere. The real seed makes him the Treasurer of Work Stokvel, and the fakes
 API so that the swap in 11.1 changes nothing on screen. The member-only case is still
 covered, twice: Lerato in Work Stokvel and Sipho in Family Stokvel are both ordinary members,
 and Thandi is in nothing. The 10.3 persona tests are written against this table.
+
+## Running it
+
+```
+# once, and after any change to a model or provider (generated files are not committed)
+flutter pub get
+dart run build_runner build --delete-conflicting-outputs
+
+# the fake data, in the dev flavour
+flutter run --flavor dev --dart-define-from-file=config/dev.json
+```
+
+There is one config file per flavour in `config/` (`dev.json`, `staging.json`, `prod.json`),
+always passed with `--dart-define-from-file`. The app **refuses to start** without one, and
+refuses a config for another flavour than the one it was built as (a `prod` build given
+`dev.json`); `test/core/config/app_config_test.dart` proves both. The config holds no
+secrets. The fakes answer after 350 ms, so the loading states are visible; tests set the
+delay to zero (`FakeLatency.none`) or make one stokvel slow.
+
+The checks CI runs, in its order:
+
+```
+dart format --output=none --set-exit-if-changed .
+dart run build_runner build --delete-conflicting-outputs
+dart analyze --fatal-infos
+flutter test
+```
+
+**Lints.** `very_good_analysis` is the rule set and `riverpod_lint` runs as an analyzer
+plugin (`analysis_options.yaml`). CI runs `dart analyze --fatal-infos`, never
+`flutter analyze`: only `dart analyze` loads analyzer plugins, so `flutter analyze` does not
+run `riverpod_lint` at all and a Riverpod mistake (a public field on a notifier, for
+example) passes it silently and fails CI.
+
+## Generated code
+
+`*.g.dart` and `*.freezed.dart` (freezed models, Riverpod providers, typed routes) are
+**not committed**; they are in `.gitignore`. Why: they are 100% reproducible from the source,
+the pinned `build_runner` and the lockfile, and committing them puts thousands of generated
+lines into every diff and conflicts into every merge. What it costs: a fresh clone needs the
+one `build_runner` command above before the IDE stops showing errors. CI generates **before**
+it analyzes and tests, so generated code can never be stale in CI. (The API client in 11.1 is
+the exception: its output is committed, so a drift check can see it change.)
+
+## Money
+
+- An amount is `Cents`, an extension type over `int`: an amount of money cannot be mixed up with
+  a count of members, and nothing holds money in a `double`.
+- Written the way `en-ZA` writes rand: `R1 234,50`. The group separator is **U+00A0** (a
+  non-breaking space, so a number never wraps), the decimal separator is a comma, there are
+  always two decimals, a negative reads `-R10,00`. Tests spell it `\u00A0`.
+- `parseRand` reads what a person types: `500`, `500.5`, `500,50`, `R 1 234,50`, `0,10`.
+  **The full-stop decision:** both `,` and `.` are accepted as the decimal separator (a phone's
+  number keypad types a full stop) and never as a thousands separator. So `1.234` and `1,234`
+  are *refused*: with three digits it is ambiguous, and guessing wrong moves a decimal point.
+  Also refused: empty, a minus sign, two separators (`1,234.50`), `.5`, `12.`, letters, and
+  anything over 2^53 - 1 cents (the most the API accepts).
+
+## When the API adds a status
+
+The API's enums are closed sets today (`Open | Closed | PaidOut`, `Pending | Paid | Confirmed`,
+`Member | Treasurer | Chairperson`). Here is what happens when one grows, tried for real: I
+added `refunded` to `ContributionStatus` and ran `dart analyze --fatal-infos`:
+
+```
+error - lib/features/contributions/domain/contribution_status.dart:20:34 - The type 'ContributionStatus' isn't exhaustively matched by the switch cases since it doesn't match the pattern 'ContributionStatus.refunded'. Try adding a wildcard pattern or cases that match 'ContributionStatus.refunded'. - non_exhaustive_switch_expression
+  error - lib/features/contributions/presentation/contribution_status_label.dart:4:62 - The type 'ContributionStatus' isn't exhaustively matched by the switch cases since it doesn't match the pattern 'ContributionStatus.refunded'. Try adding a wildcard pattern or cases that match 'ContributionStatus.refunded'. - non_exhaustive_switch_expression
+  error - lib/features/stokvel_detail/domain/stokvel_action.dart:56:7 - The type '(MemberRole, CycleStatus, ContributionStatus?)' isn't exhaustively matched by the switch cases since it doesn't match the pattern '(MemberRole.member, CycleStatus.open, ContributionStatus.refunded)'. Try adding a wildcard pattern or cases that match '(MemberRole.member, CycleStatus.open, ContributionStatus.refunded)'. - non_exhaustive_switch_expression
+
+3 issues found.
+```
+
+Three places stop compiling, and they are exactly the three places that have to decide what the
+new status means: whether it counts towards a total, what it is called on screen, and what a
+person can do about it. Nothing else changes and nothing is found by testing. I reverted the
+change; the enum has no `refunded`.
+
+**An app that is already installed** does not have that code. The mapper
+(`contributionStatusFromApi`) turns any name it does not know into `ContributionStatus.unknown`,
+so `Refunded` arrives as `unknown`, never as a crash and never as a status it might be mistaken
+for: the screen says "Unknown", it does not count towards a total, and `actionsFor` grants
+nothing for it. The same holds for roles, cycle statuses, frequencies and activity kinds. Totals
+are summed by the API, so an old install still shows the right numbers.
+
+## Provider lifetimes
+
+`@riverpod` providers dispose when nothing listens; `keepAlive` ones live as long as the app.
+The rule: **anything that holds a person's data is not kept alive**, so signing out cannot
+leave one person's numbers for the next.
+
+| Provider | Holds | Lifetime | Cost of keeping it | Cost of disposing it |
+|---|---|---|---|---|
+| `seedWorldProvider` | the fake world (people, stokvels, contributions) | keepAlive | a few KB | the "server" forgets its data and clock; only the fakes have this |
+| `fakeLatencyProvider` | one delay setting | keepAlive | nothing | nothing |
+| `authProvider` | who is signed in | keepAlive | none, it must outlive every screen | the app forgets the person on every rebuild |
+| `appRouterProvider` | the router and its stack | keepAlive | none, there must be one | the navigation stack is lost |
+| `onboardingStatusProvider`, `sharedPreferencesProvider` | "onboarding done" and the prefs handle | keepAlive | nothing | an onboarded person is shown onboarding again |
+| `*RepositoryProvider` (six) | a thin object over the fake world | autoDispose | nothing | rebuilt on next use: free |
+| `signedInUserIdProvider` | the id the fakes answer as | autoDispose | stale id after sign-out | recomputed: free |
+| `homeProvider` | the home cards | autoDispose | stale money after a payment elsewhere | spinner and a refetch when Home is shown again |
+| `stokvelPageProvider(id)` | one page: detail, cycles, 20 contributions | autoDispose, per id | one page per stokvel ever opened, with numbers that go stale | reopening shows a spinner and a refetch, with correct numbers |
+| `myStokvelsProvider`, `activityFeedProvider` | a list | autoDispose | stale list | refetch |
+
+**Proof of one disposal.** `test/features/presentation/providers_test.dart` listens to two
+stokvel pages, closes one listener, and checks that exactly one disposal was logged, for that
+id, and none for the other. What is logged is the provider name and its family argument only
+(`stokvelPageProvider(stokvel-family)`): ids, never a name or an amount (POPIA).
+
+**At sign-out.** Because nothing that holds a person's data is kept alive, signing out needs no
+cleanup of those providers: `signedInUserIdProvider` changes, every provider that watches it is
+rebuilt for the next person, and the autoDispose ones are gone anyway. The kept-alive providers
+hold no person's data. Anything that ever does must be `ref.invalidate`d in the sign-out path;
+with the real API (11.1) that includes the in-memory token holder.
 
 ## Tests
 
@@ -264,6 +387,7 @@ Measured with `curl -w %{time_total}` against `GET /api/v1/me/home` (needs the D
 
 - The 15 s is Npgsql's default connection `Timeout` (nothing overrides it: `Api/Program.cs:122-125` has no `CommandTimeout` and no connection-string timeout). The `/health/ready` check has its own 3 s limit (`Program.cs:51`), yet it took 15 s here, so that limit did not apply.
 - **The API does not retry inside.** `Program.cs:122-125` calls `UseNpgsql(connectionString, o => o.MigrationsAssembly(...))` with no `EnableRetryOnFailure`; a stopped DB fails in tens of milliseconds, so there is no hidden retry loop. → The app must **not** retry a 500 either (a retry cannot help sooner than a person's "try again"), and a write must never be retried.
+- **Recorded for 11.1 (G9):** the 15 s above is the longest the API takes to give up on its database, and `/health/ready` takes the same 15 s although it is meant to cap at 3 s. The timeouts in 11.1 are built on this number.
 - Timeout implication: the app's `receiveTimeout` must be **above 15 s** (say 20 s), otherwise it gives up one second before the API would have answered with a 500 that carries the `correlationId`.
 - The 500 body is the generic `internal-error` problem with `correlationId` (log lookup works).
 
@@ -271,15 +395,42 @@ Measured with `curl -w %{time_total}` against `GET /api/v1/me/home` (needs the D
 
 | # | Gap | Why it matters | Suggested fix, in the API repo, own branch + PR + tests |
 |---|---|---|---|
-| G1 **(held: undecided)** | Refresh needs a `Secure` cookie and has **no reuse grace window**; the refresh token is not in the body | A phone on http (dev) cannot refresh; a lost refresh response revokes the session. | Decide first. 11.1 sidesteps it: in-memory access token, sign in again after 15 min. A real fix is a short grace window and/or a mobile token flow. |
+| G1 **(decided: held for 11.2, the auth day)** | Refresh needs a `Secure` cookie and has **no reuse grace window**; the refresh token is not in the body | A phone on http (dev) cannot refresh; a lost refresh response revokes the session. | Decide first. 11.1 sidesteps it: in-memory access token, sign in again after 15 min. A real fix is a short grace window and/or a mobile token flow. |
 | G2 **(fixed in API PR #19, not merged yet)** | The OpenAPI document declares neither `Retry-After` on 429, nor `code` on `ProblemDetails`, nor a bearer `securityScheme` | The generated client cannot expose them; the app reads the raw body and header instead (already the plan). | Add a response header + `code` extension + bearer scheme in the OpenAPI transformer, with a test in `OpenApiDocumentTests`. |
 | G3 **(fixed in API PR #19, not merged yet)** | `clients/typescript/openapi.json` can go stale, and API CI does not check it. It is already stale by one description (§0) | The app's drift check compares against it. | Add an API CI step: regenerate with `OPENAPI_OUTPUT` and `git diff --exit-code`. Until then the app's cross-repo check should use the freshly generated document, not the committed snapshot. |
-| G4 **(held: undecided)** | "Who is next" is **not sent**, and there is no list-payouts endpoint | Payout screens can only know `recipientUserId` from `POST …/payout`'s response or from `PayoutMade` rows in `/me/activity`. `GET /stokvels/{id}/cycles` has no dates and no payout info. | Add `GET /stokvels/{id}/payouts` and/or a `nextRecipientUserId` on the stokvel detail, or confirm the 10.3 payouts layer works from `/me/activity` only. |
+| G4 **(decided: fixed in API PR #21, not merged yet)** | "Who is next" is **not sent**, and there is no list-payouts endpoint | Payout screens can only know `recipientUserId` from `POST …/payout`'s response or from `PayoutMade` rows in `/me/activity`. `GET /stokvels/{id}/cycles` has no dates and no payout info. | Add `GET /stokvels/{id}/payouts` and/or a `nextRecipientUserId` on the stokvel detail, or confirm the 10.3 payouts layer works from `/me/activity` only. |
 | G5 **(decided: the app follows the API)** | The real seed has Sipho as Treasurer of Work Stokvel, not "Member only" | The persona list in your 10.1 spec ("Sipho: Member only") disagrees with the API. | None in the API. The fake persona for Sipho follows the API (Member of Family, Treasurer of Work); see Personas. |
-| G6 | `Retry-After` is the constant window length (60), not the time remaining | The "Try again in N seconds" text overstates the wait. | Optional: send the real remaining seconds. |
+| G6 **(fixed in API PR #20, not merged yet)** | `Retry-After` is the constant window length (60), not the time remaining | The "Try again in N seconds" text overstates the wait. | Optional: send the real remaining seconds. |
 | G7 | The 409 title is `"Already Exists"` for stale versions and in-progress requests | Clients must use `code`, which is not in the schema (G2). | Optional: titles per code. |
-| G8 **(held: undecided)** | A payout on a still-**Open** cycle succeeded (201, 100 010 cents) when I tried it by mistake on the seed | Unrelated to 11.1's contract, but it looks like a business-rule gap. | Confirm whether payout is meant to need a Closed cycle. |
-| G9 | `/health/ready` is not capped at 3 s while the DB hangs (took 15 s) | Only matters for orchestration. | Optional. |
+| G8 **(held: the evidence says this is by design; see below)** | A payout on a still-**Open** cycle succeeded (201, 100 010 cents) when I tried it by mistake on the seed | Unrelated to 11.1's contract, but it looks like a business-rule gap. | Confirm whether payout is meant to need a Closed cycle. |
+| G9 **(decided: recorded, no fix)** | `/health/ready` is not capped at 3 s while the DB hangs (took 15 s) | Only matters for orchestration, but the 15 s is the number 11.1's timeouts are built on (see Timings). | None now. |
+
+**G1, planned fix (11.2).** The refresh cookie is `Secure` and `SameSite=Strict`, and there is no
+reuse grace window. When the auth work starts: turn `Secure` off **only in Development** (so the
+emulator's `http://10.0.2.2` can carry it), and add a short grace window for a refresh token that
+was just used, so a lost response does not revoke the whole login. Until then the app keeps the
+access token in memory and signs in again after 15 minutes.
+
+**G4, what the endpoint will give the payouts screen.** PR #21 adds
+`GET /api/v1/stokvels/{id}/cycles/{cycleId}/payouts`: the order is decided by the server (members
+by join time, then user id), each entry has `position`, `amountCents`, `paidAt`, `status`
+(`PaidOut | Next | Upcoming`) and `isNext`, and the response has `nextMemberId` (null once everyone
+has been paid). Any member may read it; a non-member gets 404. It lands before 10.3.
+
+**G8, the evidence.** The API deliberately allows a payout on an open cycle. (1) The cycle entity
+says "A Payout pays the cycle's money out, independently of closing" (`Domain/Entities/ContributionCycle.cs:23`).
+(2) The endpoint says it "Pays the cycle's total contributions to one member and closes the cycle"
+(`CyclesController.cs:69`): paying out is what moves a cycle to `PaidOut`, with or without the
+nightly close. (3) At least four API tests pay out a freshly opened, never-closed cycle and expect
+201 (`ApiReadinessTests.A_payout_comes_back_in_cents`, `MetricTests.A_payout_is_counted_with_its_outcome`,
+and the two that open a cycle and pay it in `ApiReadinessTests`). (4) Nothing in the README or
+`docs/` says a payout needs a closed cycle. So the rule "only after the cycle is closed" is not
+what the API does and not what it documents. The app's `actionsFor` therefore offers a payout on an
+open cycle (row 5/6) and on a closed one (row 7), and not after it has been paid out. Held: changing
+the API's rule is a product decision.
+
+**G6, what changed.** The built-in limiters report the whole window as `Retry-After` however much
+has passed (measured: `60`, still `60` three seconds later). PR #20 wraps them so it is the time left.
 
 G8 mutated the fresh seed (one payout row) while probing. The stack was destroyed with `down -v` afterwards, so the next `up -d` starts clean.
 
