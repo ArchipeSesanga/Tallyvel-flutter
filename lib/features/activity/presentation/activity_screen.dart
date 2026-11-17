@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:tallyvel/core/money/rand_format.dart';
-import 'package:tallyvel/core/widgets/async_body.dart';
+import 'package:tallyvel/core/widgets/view_state_body.dart';
 import 'package:tallyvel/features/activity/domain/activity_item.dart';
 import 'package:tallyvel/features/activity/domain/activity_kind.dart';
 import 'package:tallyvel/features/activity/presentation/activity_providers.dart';
@@ -14,20 +14,23 @@ class ActivityScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) => Scaffold(
     appBar: AppBar(title: const Text('Activity')),
-    body: AsyncBody(
-      value: ref.watch(activityFeedProvider),
-      data: (page) => page.items.isEmpty
-          ? const Center(child: Text('Nothing has happened yet.'))
-          : ListView(
-              children: [
-                for (final item in page.items)
-                  ListTile(
-                    key: Key('activity-${item.id}'),
-                    title: Text(_sentence(item)),
-                    subtitle: Text(item.stokvelName),
-                  ),
-              ],
+    body: ViewStateBody(
+      state: activityViewStateOf(ref.watch(activityFeedProvider)),
+      onRetry: () => ref.invalidate(activityFeedProvider),
+      empty: const Center(
+        key: Key('activity-empty'),
+        child: Text('Nothing has happened yet.'),
+      ),
+      data: (page) => ListView(
+        children: [
+          for (final item in page.items)
+            ListTile(
+              key: Key('activity-${item.id}'),
+              title: Text(_sentence(item)),
+              subtitle: Text(item.stokvelName),
             ),
+        ],
+      ),
     ),
   );
 }

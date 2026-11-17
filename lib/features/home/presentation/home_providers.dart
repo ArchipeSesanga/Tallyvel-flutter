@@ -1,34 +1,30 @@
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:tallyvel/app/composition_root.dart';
+import 'package:tallyvel/core/state/view_state.dart';
 import 'package:tallyvel/features/home/domain/home_card.dart';
 
 part 'home_providers.g.dart';
 
-/// What the home screen shows, as a closed set of cases the screen must
-/// handle one by one.
-sealed class HomeView {
-  const HomeView();
-}
-
-/// The person is in no stokvel yet: show the empty state, not a blank list.
-class HomeEmpty extends HomeView {
-  /// Creates the empty state.
-  const HomeEmpty();
-}
-
-/// The person's stokvels, one card each.
-class HomeLoaded extends HomeView {
-  /// Creates the loaded state.
-  const HomeLoaded(this.cards);
-
-  /// One card per stokvel.
-  final List<HomeCard> cards;
-}
-
-/// The home screen's state. Loading and failure come from [AsyncValue]; this
-/// only says what a *successful* answer means.
+/// The home screen's cards.
+///
+/// An `AsyncNotifier`, not a plain future, because the person can pull to
+/// refresh: [refresh] reloads while the old cards stay on screen.
 @riverpod
-Future<HomeView> homeView(Ref ref) async {
-  final cards = await ref.watch(homeRepositoryProvider).cards();
-  return cards.isEmpty ? const HomeEmpty() : HomeLoaded(cards);
+class Home extends _$Home {
+  @override
+  Future<List<HomeCard>> build() => ref.watch(homeRepositoryProvider).cards();
+
+  /// Reloads the cards. Riverpod keeps the previous cards in [state] while
+  /// the rebuild runs, and after it if it fails, so the screen never goes
+  /// blank. Never throws: a failed refresh is in [state] for the screen to
+  /// show next to the old cards.
+  Future<void> refresh() async {
+    ref.invalidateSelf();
+    await future.then((_) {}, onError: (Object _) {});
+  }
 }
+
+/// Maps the home screen's [AsyncValue] to its four states. A person in no
+/// stokvel is [ViewEmpty], not a list with nothing in it.
+ViewState<List<HomeCard>> homeViewStateOf(AsyncValue<List<HomeCard>> value) =>
+    viewStateOf(value, isEmpty: (cards) => cards.isEmpty);
