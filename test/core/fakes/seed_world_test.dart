@@ -14,7 +14,7 @@ import 'package:tallyvel/features/memberships/domain/member_role.dart';
 import 'package:tallyvel/features/stokvels/data/fake_stokvels_repository.dart';
 
 // The numbers below are what the real API returned for the same people on a
-// fresh seed (docs/contract-notes-11.1.md): Lerato's home, the Family Stokvel's
+// fresh seed (README, "Contract notes"): Lerato's home, the Family Stokvel's
 // four contributions, its 100 010 collected of 200 000 due.
 final _now = DateTime.utc(2026, 11, 17, 15);
 final _world = SeedWorld(now: _now);
