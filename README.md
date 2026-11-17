@@ -421,9 +421,12 @@ has been paid). Any member may read it; a non-member gets 404. It lands before 1
 says "A Payout pays the cycle's money out, independently of closing" (`Domain/Entities/ContributionCycle.cs:23`).
 (2) The endpoint says it "Pays the cycle's total contributions to one member and closes the cycle"
 (`CyclesController.cs:69`): paying out is what moves a cycle to `PaidOut`, with or without the
-nightly close. (3) At least four API tests pay out a freshly opened, never-closed cycle and expect
-201 (`ApiReadinessTests.A_payout_comes_back_in_cents`, `MetricTests.A_payout_is_counted_with_its_outcome`,
-and the two that open a cycle and pay it in `ApiReadinessTests`). (4) Nothing in the README or
+nightly close. (3) Three API tests pay out a never-closed cycle and expect 201
+(`ApiReadinessTests.A_payout_comes_back_in_cents`, `ApiReadinessTests.Every_timestamp_in_every_kind_of_response_ends_in_Z`,
+`MetricTests.A_payout_is_counted_with_its_outcome`). *Against that:* `ApiReadinessTests.A_cycle_is_Open_then_Closed_then_PaidOut`
+walks the lifecycle in the order the belief expects and pays out only after the close, and the status
+names read as a sequence. That shows the intended *story*, but the test closes first by choice;
+nothing refuses a payout before it. (4) Nothing in the README or
 `docs/` says a payout needs a closed cycle. So the rule "only after the cycle is closed" is not
 what the API does and not what it documents. The app's `actionsFor` therefore offers a payout on an
 open cycle (row 5/6) and on a closed one (row 7), and not after it has been paid out. Held: changing
