@@ -5,7 +5,7 @@ import 'package:tallyvel/core/theme/app_theme.dart';
 import 'package:tallyvel/features/onboarding/data/onboarding_status.dart';
 import 'package:tallyvel/features/onboarding/presentation/onboarding_flow.dart';
 
-/// The root widget of the Tallyvel app.
+/// The root widget of the TallyVel app.
 class TallyvelApp extends ConsumerWidget {
   /// Creates the app.
   const TallyvelApp({super.key});
@@ -15,7 +15,7 @@ class TallyvelApp extends ConsumerWidget {
     final onboarded = ref.watch(onboardingStatusProvider);
     if (!onboarded) {
       return MaterialApp(
-        title: 'Tallyvel',
+        title: 'TallyVel',
         theme: AppTheme.light,
         debugShowCheckedModeBanner: false,
         home: OnboardingFlow(
@@ -27,7 +27,7 @@ class TallyvelApp extends ConsumerWidget {
       );
     }
     return MaterialApp.router(
-      title: 'Tallyvel',
+      title: 'TallyVel',
       theme: AppTheme.light,
       debugShowCheckedModeBanner: false,
       routerConfig: ref.watch(appRouterProvider),

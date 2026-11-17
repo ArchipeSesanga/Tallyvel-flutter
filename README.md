@@ -1,6 +1,6 @@
-# Tallyvel
+# TallyVel
 
-Tallyvel mobile app (Flutter, Android and iOS).
+TallyVel mobile app (Flutter, Android and iOS).
 
 ## Project structure
 
@@ -32,9 +32,9 @@ Three flavours, installable side by side:
 
 | Flavour | Application id | Launcher name | Config |
 |---|---|---|---|
-| `dev` | `za.co.archipe.tallyvel.dev` | Tallyvel Dev | `config/dev.json` |
-| `staging` | `za.co.archipe.tallyvel.staging` | Tallyvel Staging | `config/staging.json` |
-| `prod` | `za.co.archipe.tallyvel` | Tallyvel | `config/prod.json` |
+| `dev` | `za.co.archipe.tallyvel.dev` | TallyVel Dev | `config/dev.json` |
+| `staging` | `za.co.archipe.tallyvel.staging` | TallyVel Staging | `config/staging.json` |
+| `prod` | `za.co.archipe.tallyvel` | TallyVel | `config/prod.json` |
 
 Always pass the flavour and its matching config file:
 

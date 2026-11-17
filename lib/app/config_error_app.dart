@@ -12,7 +12,7 @@ class ConfigErrorApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Tallyvel',
+      title: 'TallyVel',
       home: Scaffold(
         body: Center(
           child: Padding(

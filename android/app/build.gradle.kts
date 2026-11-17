@@ -38,16 +38,16 @@ android {
         create("dev") {
             dimension = "env"
             applicationIdSuffix = ".dev"
-            manifestPlaceholders["appName"] = "Tallyvel Dev"
+            manifestPlaceholders["appName"] = "TallyVel Dev"
         }
         create("staging") {
             dimension = "env"
             applicationIdSuffix = ".staging"
-            manifestPlaceholders["appName"] = "Tallyvel Staging"
+            manifestPlaceholders["appName"] = "TallyVel Staging"
         }
         create("prod") {
             dimension = "env"
-            manifestPlaceholders["appName"] = "Tallyvel"
+            manifestPlaceholders["appName"] = "TallyVel"
         }
     }
 
