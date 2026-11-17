@@ -1,7 +1,7 @@
 import 'package:tallyvel/core/paging/page.dart';
 import 'package:tallyvel/features/contributions/domain/contribution.dart';
 
-/// A stokvel's contributions, newest first.
+/// A stokvel's contributions, oldest first (the API's default order).
 abstract interface class ContributionsRepository {
   /// One page of [stokvelId]'s contributions. Pass the previous page's
   /// [PageOf.nextPageToken] as [pageToken] to continue; omit it for the first
