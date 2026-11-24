@@ -42,6 +42,28 @@ void main() {
     });
   }
 
+  test('only main.dart and sentry_reporter.dart import sentry_flutter', () {
+    final sentryImport = RegExp(r'''import\s+['"]package:sentry_flutter/''');
+    const allowed = {
+      'lib/main.dart',
+      'lib/core/observability/sentry_reporter.dart',
+    };
+    final offenders = [
+      for (final f in Directory('lib').listSync(recursive: true))
+        if (f is File &&
+            f.path.endsWith('.dart') &&
+            sentryImport.hasMatch(f.readAsStringSync()) &&
+            !allowed.contains(f.path.replaceAll(Platform.pathSeparator, '/')))
+          f.path,
+    ];
+
+    expect(offenders, isEmpty);
+    // The rule is real: the two allowed files do import it.
+    for (final path in allowed) {
+      expect(sentryImport.hasMatch(File(path).readAsStringSync()), isTrue);
+    }
+  });
+
   test('the rule can fail: it recognises a forbidden import', () {
     const bad =
         "import 'package:tallyvel/features/home/data/fake_home_repository.dart';";
