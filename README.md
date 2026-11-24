@@ -140,6 +140,33 @@ plugin (`analysis_options.yaml`). CI runs `dart analyze --fatal-infos`, never
 run `riverpod_lint` at all and a Riverpod mistake (a public field on a notifier, for
 example) passes it silently and fails CI.
 
+## Signing in (the real API)
+
+Sign-in is real: `POST /api/v1/auth/login`, then `GET /api/v1/me` for the name. The three demo
+accounts (Lerato, Sipho, Thandi) are the API's seeded users; their password is the API's
+`SEED_DEMO_PASSWORD` (in `../TallyVel/.env`, never in this repo). Everything *after* sign-in
+still answers from the fake world: the fakes pick their person from the signed-in email, and
+any other account sees empty screens until the repositories move to the API.
+
+Running against the API on your laptop from a real phone:
+
+1. Start the API (`docker compose up` in `../TallyVel`).
+2. Put your Mac's LAN address in `config/dev.json` (`ipconfig getifaddr en0`), for example
+   `"API_BASE_URL": "http://192.168.0.143:8080"`. The phone must be on the same Wi-Fi. The address
+   changes when the router hands out a new one.
+3. `flutter run --flavor dev --dart-define-from-file=config/dev.json`.
+
+Plain http is allowed for the `dev` flavour only on Android (`android/app/src/dev/res/xml/`),
+and on iOS for local-network addresses only (`NSAllowsLocalNetworking`). `staging` and `prod`
+are https-only. Android's main manifest now has the `INTERNET` permission; before, only debug
+and profile builds did, so a release build could not have reached the API or Sentry.
+
+**Limits of this step.** The access token is kept in memory, so closing the app signs the
+person out, and it ends after about 15 minutes (the API's refresh cookie is `Secure`, which
+plain http cannot carry; gap G1). A failed sign-in that is worth a developer's attention (a
+5xx) is reported from `Auth.signIn`, because a method call never reaches the provider
+observer; this is the one place besides `ReportingObserver` that reports.
+
 ## Privacy: error reporting
 
 Errors go to Sentry only when the build was given a DSN. One place decides what is sent:

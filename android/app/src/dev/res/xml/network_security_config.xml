@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- The dev flavour talks to the API on a laptop over plain http (config/dev.json
+     holds its LAN address). Staging and prod have no such file: https only. -->
+<network-security-config>
+    <base-config cleartextTrafficPermitted="true" />
+</network-security-config>
