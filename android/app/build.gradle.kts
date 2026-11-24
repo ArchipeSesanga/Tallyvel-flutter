@@ -19,7 +19,10 @@ android {
         applicationId = "za.co.archipe.tallyvel"
         // You can update the following values to match your application needs.
         // For more information, see: https://flutter.dev/to/review-gradle-config.
-        minSdk = flutter.minSdkVersion
+        // Sentry 10 needs Android 8.0 (API 26). Raising this from
+        // flutter.minSdkVersion (API 24 in this Flutter SDK) drops Android 7.x
+        // phones (API 24-25). See README -> Decisions.
+        minSdk = 26
         targetSdk = flutter.targetSdkVersion
         // Uses the version code from pubspec.yaml. When using split APKs, 1000 * ABI_VERSION
         // is added automatically by Flutter. (https://developer.android.com/studio/build/configure-apk-splits#configure-APK-versions)
