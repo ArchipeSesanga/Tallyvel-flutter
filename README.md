@@ -115,6 +115,16 @@ refuses a config for another flavour than the one it was built as (a `prod` buil
 secrets. The fakes answer after 350 ms, so the loading states are visible; tests set the
 delay to zero (`FakeLatency.none`) or make one stokvel slow.
 
+Error reporting (Sentry) is off unless you pass a DSN. The DSN is never in `config/*.json`
+(they hold `"SENTRY_DSN": ""`) and never in git; pass yours after the config file:
+
+```
+flutter run --flavor dev --dart-define-from-file=config/dev.json --dart-define=SENTRY_DSN=https://...
+```
+
+With no `SENTRY_DSN`, Sentry is never started and nothing leaves the phone. Tests never start
+it either.
+
 The checks CI runs, in its order:
 
 ```
@@ -129,6 +139,50 @@ plugin (`analysis_options.yaml`). CI runs `dart analyze --fatal-infos`, never
 `flutter analyze`: only `dart analyze` loads analyzer plugins, so `flutter analyze` does not
 run `riverpod_lint` at all and a Riverpod mistake (a public field on a notifier, for
 example) passes it silently and fails CI.
+
+## Privacy: error reporting
+
+Errors go to Sentry only when the build was given a DSN. One place decides what is sent:
+`ReportingObserver` (a Riverpod `ProviderObserver`) asks `isWorthReporting`, and only
+`core/observability/sentry_reporter.dart` and `main.dart` import Sentry
+(`test/architecture` checks that).
+
+**Reported:** anything that is not a `Failure` (a bug in the app), a `ServerFailure` (the
+API's 5xx) and an `UnexpectedFailure` (an answer the app cannot read).
+**Not reported:** not found, forbidden, validation, conflict, rule, rate limited,
+unauthorised and no answer. Those are the app working as designed: the API saying no, or the
+phone being offline. They are shown to the person, not to a developer.
+
+A `Failure` prints only its type and, for a server failure, the correlation id. It never holds
+the API's `detail`, a field value, a name or an amount. A report carries two tags: `failure`
+(the type) and `correlation_id`, which is how you find the same request in the API's logs.
+
+**What Sentry receives in an error event:** the exception type and message, the stack trace,
+the tags above, the environment (`dev`, `staging` or `prod`), the release (app id, version and
+build number), and Sentry's standard device and OS details. The SDK also records breadcrumbs
+(for example screen changes) and reports errors that are not provider failures, such as
+uncaught Flutter errors. **Sentry also sends a session on every app launch**, which is how it
+counts crash-free sessions; it holds no error. `sendDefaultPii` is off.
+
+Settings in Sentry, not in the app: **"Prevent storing of IP addresses" is on**. Data region:
+`<US/EU>` (to be filled in). The data is stored outside South Africa, which matters for POPIA.
+
+*This section is unfinished: the scrubber that removes personal data from an event before it is
+sent (`beforeSend`) is the next step, and what it removes will be listed here.*
+
+## Decisions
+
+- **`minSdk` is 26.** Sentry 10 needs Android 8.0 (API 26). It was `flutter.minSdkVersion`
+  (API 24 in this Flutter SDK), so Android 7.0 and 7.1 phones (API 24-25) can no longer
+  install the app. iOS is not affected.
+- **One Sentry environment per flavour.** `environment` is the config's `ENV`: `dev`,
+  `staging` or `prod`, so a dev crash never mixes with a prod one.
+- **The release is left to Sentry.** It builds it from the app id, version and build number, so
+  there is one name to keep in step with the store, not two.
+- **Riverpod's default retry is kept.** Riverpod tells observers about a failure only when the
+  retries have run out (a retry in progress is "loading"), so a failing provider is reported
+  once, about 38 s after it first failed, not once per attempt. A bug (`Error`) is not retried
+  and is reported at once. `reporting_observer_test.dart` has both cases.
 
 ## Generated code
 
