@@ -70,7 +70,11 @@ final class RuleFailure extends Failure {
 /// 429: too many requests; try again later.
 final class RateLimitedFailure extends Failure {
   /// Creates a rate-limited failure.
-  const RateLimitedFailure();
+  const RateLimitedFailure({this.retryAfterSeconds});
+
+  /// The API's `Retry-After`, in whole seconds, if it sent one. It is the
+  /// length of the rate-limit window, so an upper bound on the wait.
+  final int? retryAfterSeconds;
 
   @override
   String toString() => 'RateLimitedFailure';
