@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:sentry_flutter/sentry_flutter.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:tallyvel/app/app.dart';
+import 'package:tallyvel/app/composition_root.dart';
 import 'package:tallyvel/app/config_error_app.dart';
 import 'package:tallyvel/core/config/app_config.dart';
 import 'package:tallyvel/core/observability/reporter_for.dart';
@@ -23,7 +24,11 @@ Future<void> main() async {
   void start() => runApp(
     ProviderScope(
       observers: [ReportingObserver(reporter)],
-      overrides: [sharedPreferencesProvider.overrideWithValue(prefs)],
+      overrides: [
+        sharedPreferencesProvider.overrideWithValue(prefs),
+        appConfigProvider.overrideWithValue(config),
+        errorReporterProvider.overrideWithValue(reporter),
+      ],
       child: const TallyvelApp(),
     ),
   );

@@ -13,7 +13,8 @@ class ProfileScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final auth = ref.watch(authProvider);
     final name = switch (auth) {
-      SignedIn(:final persona) => persona.displayName,
+      SignedIn(:final displayName, :final persona) =>
+        displayName ?? persona?.displayName ?? '',
       SignedOut() => '',
     };
     return Scaffold(

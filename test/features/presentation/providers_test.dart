@@ -101,14 +101,20 @@ void main() {
     });
 
     test('signing in as someone else changes the answer', () async {
-      final container = _fresh(null); // signed out: nobody has any stokvel
+      final container = _fresh(
+        null, // signed out: nobody has any stokvel
+        extra: [authRepositoryProvider.overrideWithValue(StubAuthRepository())],
+      );
       final sub = container.listen(homeProvider, (_, _) {});
       addTearDown(sub.close);
       expect(await container.read(homeProvider.future), isEmpty);
 
-      container
+      await container
           .read(authProvider.notifier)
-          .signInWithEmail('lerato@tallyvel.test');
+          .signIn(
+            email: 'lerato@tallyvel.test',
+            password: StubAuthRepository.password,
+          );
 
       expect(await container.read(homeProvider.future), hasLength(2));
     });

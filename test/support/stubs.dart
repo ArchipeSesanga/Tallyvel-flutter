@@ -1,6 +1,9 @@
+import 'package:tallyvel/core/failures/failure.dart';
 import 'package:tallyvel/core/paging/page.dart';
 import 'package:tallyvel/features/activity/domain/activity_item.dart';
 import 'package:tallyvel/features/activity/domain/activity_repository.dart';
+import 'package:tallyvel/features/auth/domain/auth_repository.dart';
+import 'package:tallyvel/features/auth/domain/auth_state.dart';
 import 'package:tallyvel/features/home/domain/home_card.dart';
 import 'package:tallyvel/features/home/domain/home_repository.dart';
 import 'package:tallyvel/features/stokvels/domain/stokvel.dart';
@@ -58,4 +61,36 @@ class StubActivityRepository implements ActivityRepository {
   @override
   Future<PageOf<ActivityItem>> page({String? pageToken, int pageSize = 20}) =>
       onPage();
+}
+
+/// An [AuthRepository] that accepts [password] for the three seeded accounts
+/// and answers [failure], if given, for everything else. No network.
+class StubAuthRepository implements AuthRepository {
+  /// Creates a stub; [failure] makes every sign-in fail with it.
+  StubAuthRepository({this.failure});
+
+  /// The password every seeded account has in the stub.
+  static const password = 'correct-horse';
+
+  /// If set, every sign-in throws this.
+  final Failure? failure;
+
+  /// How many times [signOut] was called.
+  int signOuts = 0;
+
+  @override
+  Future<AuthSession> signIn({
+    required String email,
+    required String password,
+  }) async {
+    if (failure != null) throw failure!;
+    final persona = Persona.fromEmail(email);
+    if (persona == null || password != StubAuthRepository.password) {
+      throw const UnauthorisedFailure();
+    }
+    return AuthSession(email: persona.email, fullName: persona.displayName);
+  }
+
+  @override
+  Future<void> signOut() async => signOuts++;
 }

@@ -39,11 +39,18 @@ class SignedOut extends AuthState {
   const SignedOut();
 }
 
-/// [persona] is signed in.
+/// Someone is signed in.
 class SignedIn extends AuthState {
-  /// Creates the signed-in state for [persona].
-  const SignedIn(this.persona);
+  /// Creates the signed-in state.
+  ///
+  /// [persona] is the fake-world person this account is, if it is one of the
+  /// three seeded accounts; the fake repositories answer from it until the
+  /// real API replaces them. [displayName] is the name on the account.
+  const SignedIn(this.persona, {this.displayName});
 
-  /// Who is signed in.
-  final Persona persona;
+  /// The fake-world person this account is, or null for any other account.
+  final Persona? persona;
+
+  /// The name on the account, as the API has it.
+  final String? displayName;
 }
