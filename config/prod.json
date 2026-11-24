@@ -1,4 +1,5 @@
 {
   "ENV": "prod",
-  "API_BASE_URL": "https://api.tallyvel.example"
+  "API_BASE_URL": "https://api.tallyvel.example",
+  "SENTRY_DSN": ""
 }

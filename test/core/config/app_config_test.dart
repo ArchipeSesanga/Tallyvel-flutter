@@ -15,6 +15,41 @@ void main() {
     expect(config.apiBaseUrl, url);
   });
 
+  group('Sentry DSN', () {
+    test('no DSN: Sentry is off, and that is not an error', () {
+      final config = AppConfig.validate(
+        env: 'dev',
+        apiBaseUrl: url,
+        flavor: 'dev',
+      );
+
+      expect(config.sentryEnabled, isFalse);
+    });
+
+    test('a blank DSN counts as no DSN', () {
+      final config = AppConfig.validate(
+        env: 'dev',
+        apiBaseUrl: url,
+        flavor: 'dev',
+        sentryDsn: '   ',
+      );
+
+      expect(config.sentryEnabled, isFalse);
+    });
+
+    test('a DSN turns Sentry on', () {
+      final config = AppConfig.validate(
+        env: 'dev',
+        apiBaseUrl: url,
+        flavor: 'dev',
+        sentryDsn: 'https://key@o0.ingest.example/1',
+      );
+
+      expect(config.sentryEnabled, isTrue);
+      expect(config.sentryDsn, 'https://key@o0.ingest.example/1');
+    });
+  });
+
   group('refuses to start without a config', () {
     test('when ENV is missing', () {
       expect(

@@ -15,7 +15,11 @@ class ConfigError implements Exception {
 /// Per-flavour, non-secret configuration, read from `config/<flavour>.json`
 /// passed with `--dart-define-from-file`.
 class AppConfig {
-  const AppConfig._({required this.env, required this.apiBaseUrl});
+  const AppConfig._({
+    required this.env,
+    required this.apiBaseUrl,
+    required this.sentryDsn,
+  });
 
   /// Reads the compile-time config and checks it against the build flavour.
   ///
@@ -25,16 +29,22 @@ class AppConfig {
     env: const String.fromEnvironment('ENV'),
     apiBaseUrl: const String.fromEnvironment('API_BASE_URL'),
     flavor: appFlavor,
+    // The analyzer sees the compile-time default ('') and calls it redundant;
+    // a real build passes the DSN with --dart-define.
+    // ignore: avoid_redundant_argument_values
+    sentryDsn: const String.fromEnvironment('SENTRY_DSN'),
   );
 
   /// [flavor] is the flavour the app was built with (`--flavor`).
   ///
   /// Throws [ConfigError] unless [env] and [apiBaseUrl] are present and [env]
-  /// matches [flavor].
+  /// matches [flavor]. A missing [sentryDsn] is not an error: it turns error
+  /// reporting off.
   factory AppConfig.validate({
     required String env,
     required String apiBaseUrl,
     required String? flavor,
+    String sentryDsn = '',
   }) {
     if (env.isEmpty || apiBaseUrl.isEmpty) {
       throw const ConfigError(
@@ -51,7 +61,11 @@ class AppConfig {
         'but the config is for "$env".',
       );
     }
-    return AppConfig._(env: env, apiBaseUrl: apiBaseUrl);
+    return AppConfig._(
+      env: env,
+      apiBaseUrl: apiBaseUrl,
+      sentryDsn: sentryDsn.trim(),
+    );
   }
 
   /// The environments a config may name.
@@ -62,4 +76,11 @@ class AppConfig {
 
   /// The base URL of the API for this environment.
   final String apiBaseUrl;
+
+  /// The Sentry DSN, or empty. Never kept in `config/*.json`: it is passed
+  /// with `--dart-define=SENTRY_DSN=...`.
+  final String sentryDsn;
+
+  /// Whether errors are reported to Sentry. Off when there is no DSN.
+  bool get sentryEnabled => sentryDsn.isNotEmpty;
 }
