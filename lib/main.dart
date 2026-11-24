@@ -5,7 +5,6 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:tallyvel/app/app.dart';
 import 'package:tallyvel/app/config_error_app.dart';
 import 'package:tallyvel/core/config/app_config.dart';
-import 'package:tallyvel/core/observability/app_retry.dart';
 import 'package:tallyvel/core/observability/reporter_for.dart';
 import 'package:tallyvel/core/observability/reporting_observer.dart';
 import 'package:tallyvel/features/onboarding/data/onboarding_status.dart';
@@ -23,7 +22,6 @@ Future<void> main() async {
   final reporter = reporterFor(config);
   void start() => runApp(
     ProviderScope(
-      retry: appRetry,
       observers: [ReportingObserver(reporter)],
       overrides: [sharedPreferencesProvider.overrideWithValue(prefs)],
       child: const TallyvelApp(),
