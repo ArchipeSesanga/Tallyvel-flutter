@@ -148,13 +148,17 @@ accounts (Lerato, Sipho, Thandi) are the API's seeded users; their password is t
 still answers from the fake world: the fakes pick their person from the signed-in email, and
 any other account sees empty screens until the repositories move to the API.
 
-Running against the API on your laptop from a real phone:
+Running against the API on your laptop:
 
 1. Start the API (`docker compose up` in `../TallyVel`).
-2. Put your Mac's LAN address in `config/dev.json` (`ipconfig getifaddr en0`), for example
-   `"API_BASE_URL": "http://192.168.0.143:8080"`. The phone must be on the same Wi-Fi. The address
-   changes when the router hands out a new one.
-3. `flutter run --flavor dev --dart-define-from-file=config/dev.json`.
+2. `config/dev.json` uses `http://localhost:8080`. An iOS simulator reaches the laptop's
+   `localhost` directly. An Android phone or emulator on USB needs
+   `adb reverse tcp:8080 tcp:8080` first (again after unplugging or restarting adb).
+   Without USB, put the laptop's LAN address in `dev.json` instead
+   (`ipconfig getifaddr en0`, same Wi-Fi as the phone).
+3. `flutter run --flavor dev --dart-define-from-file=config/dev.json`. The config is read when
+   the app is built, so after editing it, stop the app and run again; a hot restart keeps the
+   old address.
 
 Plain http is allowed for the `dev` flavour only on Android (`android/app/src/dev/res/xml/`),
 and on iOS for local-network addresses only (`NSAllowsLocalNetworking`). `staging` and `prod`
