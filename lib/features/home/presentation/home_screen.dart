@@ -19,6 +19,18 @@ class HomeScreen extends ConsumerWidget {
     final notifier = ref.read(homeProvider.notifier);
     return Scaffold(
       appBar: AppBar(title: const Text('Home')),
+      // TEMPORARY, for the Sentry demo: remove before release.
+      bottomNavigationBar: SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.all(8),
+          child: ElevatedButton(
+            onPressed: () {
+              throw StateError('This is test exception');
+            },
+            child: const Text('Verify Sentry Setup'),
+          ),
+        ),
+      ),
       body: ViewStateBody(
         state: homeViewStateOf(ref.watch(homeProvider)),
         onRetry: notifier.refresh,
