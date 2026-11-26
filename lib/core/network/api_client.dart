@@ -15,10 +15,13 @@ const _sendTimeout = Duration(seconds: 10);
 const _receiveTimeout = Duration(seconds: 20);
 
 /// Builds the one [Dio] the app uses: [baseUrl] from the config, JSON, the
-/// timeouts above and the bearer token from [tokens]. [adapter] is for tests.
+/// timeouts above and the bearer token from [tokens]. [onUnauthorised] runs
+/// when a request other than sign-in is answered 401, because the token
+/// ended. [adapter] is for tests.
 Dio createApiDio({
   required String baseUrl,
   required TokenStore tokens,
+  void Function()? onUnauthorised,
   HttpClientAdapter? adapter,
 }) {
   final dio = Dio(
@@ -39,6 +42,15 @@ Dio createApiDio({
           options.headers['Authorization'] = 'Bearer $token';
         }
         handler.next(options);
+      },
+      onError: (error, handler) {
+        final path = error.requestOptions.path;
+        if (error.response?.statusCode == 401 &&
+            !path.startsWith('/api/v1/auth/')) {
+          tokens.accessToken = null;
+          onUnauthorised?.call();
+        }
+        handler.next(error);
       },
     ),
   );

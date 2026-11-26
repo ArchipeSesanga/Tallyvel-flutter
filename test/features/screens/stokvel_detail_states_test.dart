@@ -2,7 +2,6 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:tallyvel/app/composition_root.dart';
 import 'package:tallyvel/core/fakes/seed_world.dart';
 import 'package:tallyvel/features/auth/domain/auth_state.dart';
 import 'package:tallyvel/features/stokvel_detail/presentation/stokvel_detail_screen.dart';
@@ -20,11 +19,7 @@ Future<void> _pumpDetail(
 }) => pumpWith(
   tester,
   StokvelDetailScreen(stokvelId: stokvelId),
-  overrides: [
-    ...fakeWorldAs(persona),
-    if (stokvels != null)
-      stokvelsRepositoryProvider.overrideWithValue(stokvels),
-  ],
+  overrides: [...fakeWorldAs(persona, stokvels: stokvels)],
 );
 
 void main() {

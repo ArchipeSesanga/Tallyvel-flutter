@@ -144,9 +144,14 @@ example) passes it silently and fails CI.
 
 Sign-in is real: `POST /api/v1/auth/login`, then `GET /api/v1/me` for the name. The three demo
 accounts (Lerato, Sipho, Thandi) are the API's seeded users; their password is the API's
-`SEED_DEMO_PASSWORD` (in `../TallyVel/.env`, never in this repo). Everything *after* sign-in
-still answers from the fake world: the fakes pick their person from the signed-in email, and
-any other account sees empty screens until the repositories move to the API.
+`SEED_DEMO_PASSWORD` (in `../TallyVel/.env`, never in this repo). After sign-in, **Home, the Stokvels
+tab and a stokvel's page** (its details, members, cycles and contributions) come from the API:
+`GET /me/home`, `/stokvels`, `/stokvels/{id}`, `.../cycles` and `.../contributions`. The API has
+no memberships endpoint, so the person's role per stokvel is read from their `/me/home` cards.
+A stokvel the person is not in is a 404, shown as "not found". If the access token ends, the
+next request is answered 401 and the app returns to sign-in. **The Activity tab is still the fake
+world** (`GET /me/activity` is not wired yet). The fake repositories stay in the code for tests:
+`fakeWorldAs` in `test/support/provider_harness.dart` swaps them in.
 
 Running against the API on your laptop:
 

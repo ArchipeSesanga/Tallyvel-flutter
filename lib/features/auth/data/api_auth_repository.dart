@@ -38,8 +38,12 @@ class ApiAuthRepository implements AuthRepository {
     try {
       final me = await guardApi(() => _dio.get<Object?>('/api/v1/me'));
       return switch (me.data) {
-        {'email': final String email, 'fullName': final String fullName} =>
-          AuthSession(email: email, fullName: fullName),
+        {
+          'id': final String id,
+          'email': final String email,
+          'fullName': final String fullName,
+        } =>
+          AuthSession(userId: id, email: email, fullName: fullName),
         _ => throw const UnexpectedFailure(),
       };
     } on Failure {

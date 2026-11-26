@@ -28,6 +28,7 @@ class Auth extends _$Auth {
       state = SignedIn(
         Persona.fromEmail(session.email),
         displayName: session.fullName,
+        userId: session.userId,
       );
     } on Failure catch (failure, stack) {
       if (isWorthReporting(failure)) {

@@ -88,7 +88,11 @@ class StubAuthRepository implements AuthRepository {
     if (persona == null || password != StubAuthRepository.password) {
       throw const UnauthorisedFailure();
     }
-    return AuthSession(email: persona.email, fullName: persona.displayName);
+    return AuthSession(
+      userId: 'user-${persona.name}',
+      email: persona.email,
+      fullName: persona.displayName,
+    );
   }
 
   @override

@@ -10,10 +10,12 @@ import 'package:tallyvel/features/activity/presentation/activity_providers.dart'
 import 'package:tallyvel/features/auth/data/auth_provider.dart';
 import 'package:tallyvel/features/auth/domain/auth_state.dart';
 import 'package:tallyvel/features/home/domain/home_card.dart';
+import 'package:tallyvel/features/home/domain/home_repository.dart';
 import 'package:tallyvel/features/home/presentation/home_providers.dart';
 import 'package:tallyvel/features/memberships/domain/member_role.dart';
 import 'package:tallyvel/features/stokvel_detail/domain/stokvel_action.dart';
 import 'package:tallyvel/features/stokvel_detail/presentation/stokvel_detail_providers.dart';
+import 'package:tallyvel/features/stokvels/domain/stokvels_repository.dart';
 import 'package:tallyvel/features/stokvels/presentation/stokvels_providers.dart';
 
 import '../../support/provider_harness.dart';
@@ -21,10 +23,18 @@ import '../../support/stubs.dart';
 
 /// A fresh container for every test, never shared: no test can see another's
 /// state, and nothing is left behind.
-ProviderContainer _fresh(Persona? persona, {List<Override> extra = const []}) {
+ProviderContainer _fresh(
+  Persona? persona, {
+  HomeRepository? home,
+  StokvelsRepository? stokvels,
+  List<Override> extra = const [],
+}) {
   final container = ProviderContainer(
     retry: (_, _) => null,
-    overrides: [...fakeWorldAs(persona), ...extra],
+    overrides: [
+      ...fakeWorldAs(persona, home: home, stokvels: stokvels),
+      ...extra,
+    ],
   );
   addTearDown(container.dispose);
   return container;
@@ -76,10 +86,7 @@ void main() {
       final repo = StubHomeRepository(
         (call) => call == 1 ? Future.value(cards) : reload.future,
       );
-      final container = _fresh(
-        Persona.lerato,
-        extra: [homeRepositoryProvider.overrideWithValue(repo)],
-      );
+      final container = _fresh(Persona.lerato, home: repo);
       final sub = container.listen(homeProvider, (_, _) {});
       addTearDown(sub.close);
       await container.read(homeProvider.future);
@@ -137,10 +144,7 @@ void main() {
 
     test('two listeners on one id share ONE fetch', () async {
       final stub = _countingStokvels();
-      final container = _fresh(
-        Persona.lerato,
-        extra: [stokvelsRepositoryProvider.overrideWithValue(stub)],
-      );
+      final container = _fresh(Persona.lerato, stokvels: stub);
 
       final a = container.listen(
         stokvelPageProvider(SeedWorld.familyId),
@@ -159,10 +163,7 @@ void main() {
 
     test('a different id is a different fetch', () async {
       final stub = _countingStokvels();
-      final container = _fresh(
-        Persona.lerato,
-        extra: [stokvelsRepositoryProvider.overrideWithValue(stub)],
-      );
+      final container = _fresh(Persona.lerato, stokvels: stub);
 
       await container.read(stokvelPageProvider(SeedWorld.familyId).future);
       await container.read(stokvelPageProvider(SeedWorld.workId).future);
@@ -175,11 +176,11 @@ void main() {
       final second = _countingStokvels();
       await _fresh(
         Persona.lerato,
-        extra: [stokvelsRepositoryProvider.overrideWithValue(first)],
+        stokvels: first,
       ).read(stokvelPageProvider(SeedWorld.familyId).future);
       await _fresh(
         Persona.lerato,
-        extra: [stokvelsRepositoryProvider.overrideWithValue(second)],
+        stokvels: second,
       ).read(stokvelPageProvider(SeedWorld.familyId).future);
 
       // The second container fetched again instead of reusing the first's.

@@ -1,7 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_riverpod/misc.dart' show Override;
 import 'package:flutter_test/flutter_test.dart';
-import 'package:tallyvel/app/composition_root.dart';
 import 'package:tallyvel/core/failures/failure.dart';
 import 'package:tallyvel/core/observability/reporting_observer.dart';
 import 'package:tallyvel/features/auth/domain/auth_state.dart';
@@ -22,9 +21,9 @@ ProviderContainer _homeFailingWith(
     retry: retry ?? (_, _) => null,
     observers: [ReportingObserver(reporter)],
     overrides: <Override>[
-      ...fakeWorldAs(Persona.lerato),
-      homeRepositoryProvider.overrideWithValue(
-        StubHomeRepository((_) => Future.error(error)),
+      ...fakeWorldAs(
+        Persona.lerato,
+        home: StubHomeRepository((_) => Future.error(error)),
       ),
     ],
   );
